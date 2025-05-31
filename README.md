@@ -1,0 +1,1 @@
+# FastAPI-Scratch-Module
