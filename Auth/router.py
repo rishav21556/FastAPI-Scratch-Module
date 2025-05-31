@@ -10,6 +10,7 @@ import hashlib
 import base64
 import hmac
 import json
+from datetime import datetime, timedelta, timezone
 
 status = load_dotenv(dotenv_path=Path('.env'))
 
@@ -53,7 +54,10 @@ async def verify_jwt(token: str) -> dict:
     expected_signature = hmac.new(PASSWORDKEY.encode("utf-8"), message, hashlib.sha256).digest()
     expected_signature_b64 = base64.urlsafe_b64encode(expected_signature).rstrip(b"=").decode("utf-8")
 
-    if not hmac.compare_digest(expected_signature_b64, signature_b64):
+    payload_json = json.loads((await _base64url_decode(payload_b64)).decode('utf-8'))
+
+
+    if not hmac.compare_digest(expected_signature_b64, signature_b64) or datetime.now(timezone.utc) > datetime.fromtimestamp(payload_json['exp'], tz=timezone.utc) :
         return False
 
     return True
@@ -79,8 +83,16 @@ async def auth(reg_user: Annotated[User, Body()]):
 
     received_hash = await _hash_pass(reg_user.password)
     if (received_hash == existingUser["user"].password):
-        headers = {'alg':'hs256', 'typ': "JWT"}
-        content = {"sub": "jwtauth", "name": reg_user.username, "admin": False}
+        headers = {
+            'alg':'hs256',
+            'typ': "JWT"
+        }
+        content = {
+            "sub": "jwtauth", 
+            "name": reg_user.username, 
+            "admin": False, 
+            "exp":int((datetime.now() + timedelta(minutes=5)).timestamp())
+        }
         header_bytes = json.dumps(headers, separators=(",", ":")).encode("utf-8")
         payload_bytes = json.dumps(content, separators=(",", ":")).encode("utf-8")
         header_b64 = await _base64url_encode(header_bytes)
