@@ -1,6 +1,7 @@
 from fastapi import FastAPI, APIRouter, Request
 from fastapi.responses import JSONResponse
-from Auth.router import router, verify_jwt
+from Auth.router import router
+from Auth.common import verify_jwt
 
 app = FastAPI()
 
@@ -20,7 +21,7 @@ async def checkAuthorization(req: Request, callnext):
 
 
 @app.get("/")
-async def root(req: Request):
+async def root():
     return {"message": "API is working"}
 
 app.include_router(router=router)
