@@ -1,4 +1,5 @@
 from fastapi import FastAPI, APIRouter, Request
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from Auth.router import router
 from Auth.common import verify_jwt
@@ -18,6 +19,14 @@ async def checkAuthorization(req: Request, callnext):
             return JSONResponse(status_code=401, content={"detail": "Invalid token"})
     response = await callnext(req)
     return response
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:3000"],
+    allow_credentials=True,
+    allow_methods=["*"],  # allows all HTTP methods: GET, POST, etc.
+    allow_headers=["*"],  # allows all headers
+)
 
 
 @app.get("/")
